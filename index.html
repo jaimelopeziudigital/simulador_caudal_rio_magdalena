@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulación de Caudal Hidrológico</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-x-hidden text-slate-200">
+
+  <!-- HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20">
+          <i data-lucide="waves" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white leading-tight">Simulador Hidrológico de Caudal</h1>
+          <p class="text-xs text-slate-400">Modelado continuo de flujo de agua y descarga volumétrica</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+          Estado: Simulación Activa
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    
+    <!-- TOP CARDS SUMMARY METRICS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400">Caudal Actual Q(t)</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="card-current-flow" class="text-2xl font-bold text-cyan-400">5,679.16</span>
+            <span class="text-xs text-slate-400">m³/s</span>
+          </div>
+          <p id="card-current-time" class="text-xs text-slate-500 mt-1">En t = 0.00 h</p>
+        </div>
+        <div class="p-3 bg-cyan-500/10 rounded-lg text-cyan-400">
+          <i data-lucide="droplet" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400">Volumen Acumulado</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="card-total-volume" class="text-2xl font-bold text-emerald-400">0.00</span>
+            <span class="text-xs text-slate-400">hm³</span>
+          </div>
+          <p id="card-volume-m3" class="text-xs text-slate-500 mt-1">0 m³ total descargados</p>
+        </div>
+        <div class="p-3 bg-emerald-500/10 rounded-lg text-emerald-400">
+          <i data-lucide="box" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400">Caudal Máximo (Pico)</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="card-max-flow" class="text-2xl font-bold text-amber-400">5,826.69</span>
+            <span class="text-xs text-slate-400">m³/s</span>
+          </div>
+          <p id="card-max-time" class="text-xs text-slate-500 mt-1">Alcanzado a las t = 6h</p>
+        </div>
+        <div class="p-3 bg-amber-500/10 rounded-lg text-amber-400">
+          <i data-lucide="trending-up" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-400">Caudal Promedio</p>
+          <div class="flex items-baseline gap-1 mt-1">
+            <span id="card-avg-flow" class="text-2xl font-bold text-indigo-400">5,286.40</span>
+            <span class="text-xs text-slate-400">m³/s</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">Durante las 36 horas</p>
+        </div>
+        <div class="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
+          <i data-lucide="activity" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN SIMULATION AREA -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- LEFT COLUMN: WATER ANIMATION CANVAS & CONTROLS (7 Cols) -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[440px] relative overflow-hidden">
+          <div class="flex justify-between items-center mb-3 z-10">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              <h2 class="text-sm font-semibold text-slate-200">Simulación Visual de Vertido / Canal</h2>
+            </div>
+            <div class="text-xs font-mono bg-slate-950/80 px-2 py-1 rounded border border-slate-800 text-cyan-300">
+              v = <span id="canvas-water-speed">0.00</span> m/s
+            </div>
+          </div>
+
+          <!-- Canvas Container -->
+          <div class="flex-1 relative rounded-lg overflow-hidden border border-slate-800 bg-slate-950">
+            <canvas id="waterCanvas" class="w-full h-full block"></canvas>
+            
+            <!-- Overlay Info -->
+            <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 text-xs space-y-0.5">
+              <div class="text-slate-400">Nivel de Agua: <span id="water-depth-indicator" class="font-bold text-white">0.00 m</span></div>
+              <div class="text-slate-400">Turbulencia Est.: <span id="turbulence-indicator" class="font-bold text-amber-400">Normal</span></div>
+            </div>
+          </div>
+
+          <!-- ANIMATION CONTROLS BAR -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+              <button id="btn-play-pause" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold rounded-lg text-xs flex items-center gap-2 transition">
+                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                <span>Iniciar</span>
+              </button>
+              <button id="btn-reset" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1.5 transition">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span>Reiniciar</span>
+              </button>
+
+              <div class="flex-1 flex items-center gap-2 px-2">
+                <span class="text-xs font-mono text-slate-400 w-10 text-right">0h</span>
+                <input type="range" id="timeline-slider" min="0" max="36" step="0.05" value="0" class="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                <span class="text-xs font-mono text-slate-400 w-10">36h</span>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-slate-400 mr-1">Velocidad:</span>
+                <select id="sim-speed" class="bg-slate-800 border border-slate-700 text-xs rounded px-2 py-1 text-slate-200 font-mono">
+                  <option value="1">1x</option>
+                  <option value="2" selected>2x</option>
+                  <option value="5">5x</option>
+                  <option value="10">10x</option>
+                  <option value="20">20x</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: HYDROGRAPH CHART (5 Cols) -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 h-[440px] flex flex-col">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-200">Hidrograma de Caudal Q(t)</h2>
+              <p class="text-xs text-slate-400">Curva continua interpolada (m³/s vs horas)</p>
+            </div>
+            <div class="flex items-center gap-1 text-[11px] text-slate-400">
+              <span class="w-3 h-0.5 bg-cyan-400 rounded-full inline-block"></span>
+              <span>Mediciones</span>
+            </div>
+          </div>
+
+          <div class="flex-1 relative min-h-0">
+            <canvas id="hydroChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DATA TABLE & DETAILED ANALYSIS -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- TABLE EDITOR (7 Cols) -->
+      <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-200">Tabla de Datos de Campo</h3>
+            <p class="text-xs text-slate-400">Puedes editar o añadir puntos de medición para actualizar la simulación</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="btn-add-row" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-cyan-400 rounded-lg border border-slate-700 flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Añadir Punto</span>
+            </button>
+            <button id="btn-restore-default" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-400 rounded-lg border border-slate-700">
+              Restaurar
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th class="px-4 py-3">Tiempo (horas)</th>
+                <th class="px-4 py-3">Caudal (m³/s)</th>
+                <th class="px-4 py-3">Volumen Parcial (hm³)</th>
+                <th class="px-4 py-3">Estado de Tendencia</th>
+                <th class="px-4 py-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="data-table-body" class="divide-y divide-slate-800/60 font-mono">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MATHEMATICAL INTEGRATION SUMMARY (5 Cols) -->
+      <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="calculator" class="w-4 h-4 text-cyan-400"></i>
+            <h3 class="text-sm font-semibold text-slate-200">Método de Integración Numérica</h3>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed mb-4">
+            El volumen total descargado se calcula mediante el cálculo de la integral del caudal respecto al tiempo:
+          </p>
+          
+          <div class="p-3 bg-slate-950 border border-slate-800 rounded-lg text-center font-mono text-cyan-300 text-xs mb-4">
+            V_{total} = \int_{0}^{36} Q(t) \, dt \approx \sum_{i=1}^{n} \frac{Q_i + Q_{i+1}}{2} \cdot \Delta t_i
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+              <span class="text-slate-400">Duración del evento:</span>
+              <span class="font-mono text-slate-200">36 horas (129,600 segundos)</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+              <span class="text-slate-400">Volumen acumulado exacto:</span>
+              <span id="summary-vol-exact" class="font-mono text-emerald-400 font-bold">690.31 hm³</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+              <span class="text-slate-400">Equivalente en litros:</span>
+              <span id="summary-vol-liters" class="font-mono text-slate-200">6.90 × 10¹¹ Litros</span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-slate-400">Variación máx. de caudal:</span>
+              <span id="summary-flow-delta" class="font-mono text-amber-400">901.29 m³/s (15.47%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+          <button id="btn-export-csv" class="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded-lg border border-slate-700 flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Exportar Reporte CSV</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    // Default measured dataset
+    const DEFAULT_DATA = [
+      { t: 0, q: 5679.16 },
+      { t: 6, q: 5826.69 },
+      { t: 12, q: 5640.89 },
+      { t: 24, q: 4925.40 },
+      { t: 30, q: 4974.82 },
+      { t: 36, q: 4936.96 }
+    ];
+
+    let dataset = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    let currentTime = 0;
+    let isPlaying = false;
+    let animationFrameId = null;
+    let chartInstance = null;
+
+    // Cubic Monotone / Linear Interpolation helper for smooth curve evaluation
+    function getInterpolatedFlow(t) {
+      if (dataset.length === 0) return 0;
+      if (t <= dataset[0].t) return dataset[0].q;
+      if (t >= dataset[dataset.length - 1].t) return dataset[dataset.length - 1].q;
+
+      // Find interval
+      let i = 0;
+      while (i < dataset.length - 1 && dataset[i + 1].t < t) {
+        i++;
+      }
+
+      const p0 = dataset[Math.max(0, i - 1)];
+      const p1 = dataset[i];
+      const p2 = dataset[i + 1];
+      const p3 = dataset[Math.min(dataset.length - 1, i + 2)];
+
+      // Catmull-Rom Spline Interpolation for smooth, physically realistic flow rate curve
+      const tNorm = (t - p1.t) / (p2.t - p1.t);
+      const t2 = tNorm * tNorm;
+      const t3 = t2 * tNorm;
+
+      // Smooth Hermite basis
+      const q = 0.5 * (
+        (2 * p1.q) +
+        (-p0.q + p2.q) * tNorm +
+        (2 * p0.q - 5 * p1.q + 4 * p2.q - p3.q) * t2 +
+        (-p0.q + 3 * p1.q - 3 * p2.q + p3.q) * t3
+      );
+
+      return Math.max(0, q);
+    }
+
+    // Trapezoidal volume integration up to time t (in seconds: t * 3600)
+    function calculateVolumeUpTo(targetTime) {
+      if (dataset.length < 2) return 0;
+      let totalM3 = 0;
+      const step = 0.05; // hours
+
+      for (let time = 0; time < targetTime; time += step) {
+        const nextTime = Math.min(targetTime, time + step);
+        const q1 = getInterpolatedFlow(time);
+        const q2 = getInterpolatedFlow(nextTime);
+        const dtSeconds = (nextTime - time) * 3600;
+        
+        totalM3 += ((q1 + q2) / 2) * dtSeconds;
+      }
+
+      return totalM3;
+    }
+
+    function updateTableUI() {
+      const tbody = document.getElementById('data-table-body');
+      tbody.innerHTML = '';
+
+      let cumulativeVol = 0;
+
+      dataset.forEach((point, index) => {
+        let segVol = 0;
+        let trendHtml = '<span class="text-slate-400">Inicio</span>';
+
+        if (index > 0) {
+          const prev = dataset[index - 1];
+          const dtSec = (point.t - prev.t) * 3600;
+          segVol = ((point.q + prev.q) / 2) * dtSec / 1e6; // hm3
+          cumulativeVol += segVol;
+
+          const diff = point.q - prev.q;
+          if (diff > 10) {
+            trendHtml = `<span class="text-emerald-400 inline-flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Ascendente (+${diff.toFixed(1)})</span>`;
+          } else if (diff < -10) {
+            trendHtml = `<span class="text-rose-400 inline-flex items-center gap-1"><i data-lucide="trending-down" class="w-3 h-3"></i> Descendente (${diff.toFixed(1)})</span>`;
+          } else {
+            trendHtml = `<span class="text-slate-400 inline-flex items-center gap-1"><i data-lucide="minus" class="w-3 h-3"></i> Estables</span>`;
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+        tr.innerHTML = `
+          <td class="px-4 py-2.5">
+            <input type="number" step="0.5" value="${point.t}" data-index="${index}" data-field="t" 
+                   class="table-input bg-slate-950 border border-slate-800 text-slate-200 rounded px-2 py-1 w-20 text-xs focus:border-cyan-500 focus:outline-none">
+          </td>
+          <td class="px-4 py-2.5">
+            <input type="number" step="10" value="${point.q}" data-index="${index}" data-field="q" 
+                   class="table-input bg-slate-950 border border-slate-800 text-cyan-400 font-bold rounded px-2 py-1 w-28 text-xs focus:border-cyan-500 focus:outline-none">
+          </td>
+          <td class="px-4 py-2.5 text-slate-300">
+            ${segVol.toFixed(2)} hm³
+          </td>
+          <td class="px-4 py-2.5">
+            ${trendHtml}
+          </td>
+          <td class="px-4 py-2.5 text-right">
+            ${dataset.length > 2 ? `
+              <button data-delete="${index}" class="text-slate-500 hover:text-rose-400 p-1 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+      attachTableEventListeners();
+      recalculateStats();
+    }
+
+    function attachTableEventListeners() {
+      document.querySelectorAll('.table-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.dataset.index);
+          const field = e.target.dataset.field;
+          const val = parseFloat(e.target.value) || 0;
+
+          dataset[idx][field] = val;
+          // Sort dataset by time if t was modified
+          if (field === 't') {
+            dataset.sort((a, b) => a.t - b.t);
+            // Update slider max to the highest time
+            const maxT = dataset[dataset.length - 1].t;
+            document.getElementById('timeline-slider').max = maxT;
+          }
+
+          updateTableUI();
+          updateChartData();
+          updateSimulationState();
+        });
+      });
+
+      document.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = parseInt(btn.getAttribute('data-delete'));
+          dataset.splice(idx, 1);
+          updateTableUI();
+          updateChartData();
+          updateSimulationState();
+        });
+      });
+    }
+
+    function recalculateStats() {
+      if (dataset.length === 0) return;
+
+      let maxFlow = -Infinity;
+      let maxTime = 0;
+      let minFlow = Infinity;
+      let sumFlow = 0;
+
+      dataset.forEach(p => {
+        if (p.q > maxFlow) {
+          maxFlow = p.q;
+          maxTime = p.t;
+        }
+        if (p.q < minFlow) {
+          minFlow = p.q;
+        }
+        sumFlow += p.q;
+      });
+
+      const maxT = dataset[dataset.length - 1].t;
+      const totalVolM3 = calculateVolumeUpTo(maxT);
+      const totalVolHm3 = totalVolM3 / 1e6;
+      const avgFlow = totalVolM3 / (maxT * 3600);
+
+      document.getElementById('card-max-flow').innerText = maxFlow.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('card-max-time').innerText = `Alcanzado a las t = ${maxTime}h`;
+      document.getElementById('card-avg-flow').innerText = avgFlow.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      document.getElementById('summary-vol-exact').innerText = `${totalVolHm3.toFixed(2)} hm³`;
+      document.getElementById('summary-vol-liters').innerText = `${(totalVolM3 * 1000).toExponential(2)} Litros`;
+      
+      const delta = maxFlow - minFlow;
+      const perc = (delta / minFlow) * 100;
+      document.getElementById('summary-flow-delta').innerText = `${delta.toFixed(2)} m³/s (${perc.toFixed(2)}%)`;
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('hydroChart').getContext('2d');
+      
+      // Generate dense curve data
+      const curvePoints = [];
+      const maxT = dataset[dataset.length - 1].t;
+      for (let t = 0; t <= maxT; t += 0.25) {
+        curvePoints.push({ x: t, y: getInterpolatedFlow(t) });
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: 'Curva de Caudal Interpolada',
+              data: curvePoints,
+              borderColor: '#22d3ee',
+              borderWidth: 2.5,
+              fill: true,
+              backgroundColor: (context) => {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) return null;
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                gradient.addColorStop(0, 'rgba(34, 211, 238, 0.3)');
+                gradient.addColorStop(1, 'rgba(34, 211, 238, 0.0)');
+                return gradient;
+              },
+              tension: 0.3,
+              pointRadius: 0
+            },
+            {
+              label: 'Puntos Medidos',
+              data: dataset.map(p => ({ x: p.t, y: p.q })),
+              borderColor: '#f59e0b',
+              backgroundColor: '#f59e0b',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              showLine: false
+            },
+            {
+              label: 'Tiempo Actual',
+              data: [{ x: 0, y: getInterpolatedFlow(0) }],
+              borderColor: '#10b981',
+              backgroundColor: '#10b981',
+              pointRadius: 7,
+              pointHoverRadius: 9,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: { display: true, text: 'Tiempo (horas)', color: '#94a3b8', font: { size: 11 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#64748b', font: { size: 10 } }
+            },
+            y: {
+              title: { display: true, text: 'Caudal Q (m³/s)', color: '#94a3b8', font: { size: 11 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#64748b', font: { size: 10 } }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Caudal: ${ctx.parsed.y.toFixed(2)} m³/s en t = ${ctx.parsed.x.toFixed(2)}h`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateChartData() {
+      if (!chartInstance) return;
+      const maxT = dataset[dataset.length - 1].t;
+
+      const curvePoints = [];
+      for (let t = 0; t <= maxT; t += 0.25) {
+        curvePoints.push({ x: t, y: getInterpolatedFlow(t) });
+      }
+
+      chartInstance.data.datasets[0].data = curvePoints;
+      chartInstance.data.datasets[1].data = dataset.map(p => ({ x: p.t, y: p.q }));
+      chartInstance.options.scales.x.max = maxT;
+      chartInstance.update('none');
+    }
+
+    function updateChartCurrentPoint(t, q) {
+      if (!chartInstance) return;
+      chartInstance.data.datasets[2].data = [{ x: t, y: q }];
+      chartInstance.update('none');
+    }
+
+    const canvas = document.getElementById('waterCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let particles = [];
+    const MAX_PARTICLES = 120;
+
+    class FoamParticle {
+      constructor(w, h) {
+        this.reset(w, h);
+      }
+
+      reset(w, h) {
+        this.x = Math.random() * w;
+        this.y = (Math.random() * 0.6 + 0.35) * h; // inside water depth
+        this.size = Math.random() * 3 + 1.5;
+        this.alpha = Math.random() * 0.7 + 0.2;
+        this.baseVx = Math.random() * 2 + 1;
+        this.waveOffset = Math.random() * Math.PI * 2;
+      }
+
+      update(w, h, flowSpeedFactor) {
+        this.x += this.baseVx * flowSpeedFactor;
+        this.y += Math.sin(this.x * 0.02 + this.waveOffset) * 0.3;
+
+        if (this.x > w) {
+          this.x = 0;
+          this.y = (Math.random() * 0.6 + 0.35) * h;
+        }
+      }
+
+      draw(ctx) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      // Re-init particles
+      particles = [];
+      for (let i = 0; i < MAX_PARTICLES; i++) {
+        particles.push(new FoamParticle(rect.width, rect.height));
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    let wavePhase = 0;
+
+    function renderWaterSimulation(qCurrent) {
+      const w = canvas.getBoundingClientRect().width;
+      const h = canvas.getBoundingClientRect().height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Normalize flow Q (e.g., between 4000 and 6500)
+      const qMin = 4000;
+      const qMax = 6500;
+      const qNorm = Math.min(1, Math.max(0, (qCurrent - qMin) / (qMax - qMin)));
+
+      // Water channel properties
+      const waterHeightRatio = 0.35 + qNorm * 0.45; // 35% to 80% height of canvas
+      const waterTopY = h * (1 - waterHeightRatio);
+      const flowVelocity = 1.2 + qNorm * 4.5; // m/s visual scale
+
+      // Draw River Bed Background
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw Dam Structure on Left Edge
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, 40, h);
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(35, 0, 10, h);
+
+      // Draw Water Body Gradient
+      const waterGradient = ctx.createLinearGradient(0, waterTopY, 0, h);
+      waterGradient.addColorStop(0, 'rgba(6, 182, 212, 0.85)'); // Cyan top
+      waterGradient.addColorStop(0.4, 'rgba(14, 116, 144, 0.9)'); 
+      waterGradient.addColorStop(1, 'rgba(15, 23, 42, 0.95)');   // Dark bottom
+
+      ctx.fillStyle = waterGradient;
+      ctx.beginPath();
+      ctx.moveTo(45, h);
+      ctx.lineTo(45, waterTopY);
+
+      // Animated Water Surface Waves
+      wavePhase += 0.05 * flowVelocity;
+      for (let x = 45; x <= w; x += 10) {
+        const waveY = waterTopY + Math.sin((x * 0.03) + wavePhase) * (2 + qNorm * 4);
+        ctx.lineTo(x, waveY);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Top Surface Glow / Foam line
+      ctx.strokeStyle = '#a5f3fc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Update and Draw Foam Particles
+      particles.forEach(p => {
+        p.update(w, h, flowVelocity * 0.8);
+        if (p.y >= waterTopY + 5) {
+          p.draw(ctx);
+        }
+      });
+
+      // Update visual telemetry elements
+      document.getElementById('canvas-water-speed').innerText = flowVelocity.toFixed(2);
+      const depthMeters = (waterHeightRatio * 12).toFixed(2); // Dynamic depth scaling metric
+      document.getElementById('water-depth-indicator').innerText = `${depthMeters} m`;
+      
+      const turbulenceEl = document.getElementById('turbulence-indicator');
+      if (qNorm > 0.7) {
+        turbulenceEl.innerText = "Alta (Pico)";
+        turbulenceEl.className = "font-bold text-rose-400";
+      } else if (qNorm < 0.3) {
+        turbulenceEl.innerText = "Baja";
+        turbulenceEl.className = "font-bold text-emerald-400";
+      } else {
+        turbulenceEl.innerText = "Moderada";
+        turbulenceEl.className = "font-bold text-amber-400";
+      }
+    }
+
+    function updateSimulationState() {
+      const maxT = dataset[dataset.length - 1].t;
+      if (currentTime > maxT) {
+        currentTime = maxT;
+        if (isPlaying) togglePlayPause();
+      }
+
+      const qVal = getInterpolatedFlow(currentTime);
+      const currentVolM3 = calculateVolumeUpTo(currentTime);
+      const currentVolHm3 = currentVolM3 / 1e6;
+
+      // Update DOM Metrics
+      document.getElementById('card-current-flow').innerText = qVal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('card-current-time').innerText = `En t = ${currentTime.toFixed(2)} h`;
+      document.getElementById('card-total-volume').innerText = currentVolHm3.toFixed(2);
+      document.getElementById('card-volume-m3').innerText = `${Math.round(currentVolM3).toLocaleString('es-ES')} m³ descargados`;
+
+      document.getElementById('timeline-slider').value = currentTime;
+
+      // Update Chart & Canvas
+      updateChartCurrentPoint(currentTime, qVal);
+      renderWaterSimulation(qVal);
+    }
+
+    let lastTimestamp = null;
+
+    function stepAnimation(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dtMs = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+
+      if (isPlaying) {
+        const speedMultiplier = parseFloat(document.getElementById('sim-speed').value) || 2;
+        // Advance time: 1 second real time = speedMultiplier hours simulation time
+        currentTime += (dtMs / 1000) * (speedMultiplier / 3.6);
+
+        const maxT = dataset[dataset.length - 1].t;
+        if (currentTime >= maxT) {
+          currentTime = maxT;
+          updateSimulationState();
+          togglePlayPause();
+          return;
+        }
+
+        updateSimulationState();
+      }
+
+      animationFrameId = requestAnimationFrame(stepAnimation);
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('btn-play-pause');
+      
+      if (isPlaying) {
+        btn.innerHTML = `<i data-lucide="pause" class="w-4 h-4 fill-current"></i><span>Pausar</span>`;
+        btn.classList.replace('bg-cyan-500', 'bg-amber-500');
+        btn.classList.replace('hover:bg-cyan-400', 'hover:bg-amber-400');
+        lastTimestamp = performance.now();
+        if (!animationFrameId) {
+          animationFrameId = requestAnimationFrame(stepAnimation);
+        }
+      } else {
+        btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i><span>Continuar</span>`;
+        btn.classList.replace('bg-amber-500', 'bg-cyan-500');
+        btn.classList.replace('hover:bg-amber-400', 'hover:bg-cyan-400');
+      }
+      lucide.createIcons();
+    }
+
+    document.getElementById('btn-play-pause').addEventListener('click', () => {
+      const maxT = dataset[dataset.length - 1].t;
+      if (currentTime >= maxT) currentTime = 0;
+      togglePlayPause();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      if (isPlaying) togglePlayPause();
+      currentTime = 0;
+      updateSimulationState();
+    });
+
+    document.getElementById('timeline-slider').addEventListener('input', (e) => {
+      currentTime = parseFloat(e.target.value);
+      updateSimulationState();
+    });
+
+    document.getElementById('btn-add-row').addEventListener('click', () => {
+      const lastPoint = dataset[dataset.length - 1];
+      const newT = lastPoint ? lastPoint.t + 6 : 6;
+      const newQ = lastPoint ? lastPoint.q : 5000;
+      dataset.push({ t: newT, q: newQ });
+
+      document.getElementById('timeline-slider').max = newT;
+      updateTableUI();
+      updateChartData();
+      updateSimulationState();
+    });
+
+    document.getElementById('btn-restore-default').addEventListener('click', () => {
+      dataset = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      currentTime = 0;
+      if (isPlaying) togglePlayPause();
+      document.getElementById('timeline-slider').max = 36;
+      updateTableUI();
+      updateChartData();
+      updateSimulationState();
+    });
+
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+      let csvContent = "Tiempo (horas),Caudal (m3/s),Volumen Acumulado (hm3)\n";
+      const maxT = dataset[dataset.length - 1].t;
+      
+      for (let t = 0; t <= maxT; t += 1) {
+        const q = getInterpolatedFlow(t);
+        const v = calculateVolumeUpTo(t) / 1e6;
+        csvContent += `${t},${q.toFixed(2)},${v.toFixed(2)}\n`;
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_hidrologico_caudal.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Initialization on window load
+    window.onload = () => {
+      lucide.createIcons();
+      resizeCanvas();
+      initChart();
+      updateTableUI();
+      updateSimulationState();
+      
+      // Continuous canvas render loop for ambient wave animation even when paused
+      function ambientLoop() {
+        if (!isPlaying) {
+          const qVal = getInterpolatedFlow(currentTime);
+          renderWaterSimulation(qVal);
+        }
+        requestAnimationFrame(ambientLoop);
+      }
+      ambientLoop();
+    };
+  </script>
+</body>
+</html>
